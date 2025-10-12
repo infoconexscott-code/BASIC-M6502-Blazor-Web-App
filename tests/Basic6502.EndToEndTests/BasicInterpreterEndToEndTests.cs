@@ -39,4 +39,34 @@ public class BasicInterpreterEndToEndTests
 
         Assert.Equal("HI", writer.ToString());
     }
+
+    [Fact]
+    public void ProgramConsumesInputFromConsoleReaderWhenQueueIsEmpty()
+    {
+        var bus = new MemoryBus();
+        using var writer = new StringWriter();
+        using var reader = new StringReader("OK");
+        var bridge = new BasicConsoleBridge(writer, reader);
+        bus.AttachDevice(bridge);
+
+        var program = new byte[]
+        {
+            0xAD, 0x05, 0xF0, // LDA $F005 (input data)
+            0x8D, 0x01, 0xF0, // STA $F001 (output)
+            0xAD, 0x05, 0xF0, // LDA $F005 (input data)
+            0x8D, 0x01, 0xF0, // STA $F001 (output)
+            0x00              // BRK
+        };
+
+        bus.Load(0x8000, program);
+        bus.Load(0xFFFC, new byte[] { 0x00, 0x80 });
+
+        var cpu = new Mos6502(bus);
+        for (var i = 0; i < 32 && writer.GetStringBuilder().Length < 2; i++)
+        {
+            cpu.Step();
+        }
+
+        Assert.Equal("OK", writer.ToString());
+    }
 }

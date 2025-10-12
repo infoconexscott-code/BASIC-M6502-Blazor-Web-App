@@ -1,0 +1,35 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "Basic6502.Core/**"
+      - "tests/**"
+      - ".github/workflows/deploy.yml"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Basic6502.Core/Basic6502.Core.csproj
+
+      - name: Publish library
+        run: dotnet publish Basic6502.Core/Basic6502.Core.csproj --configuration Release --output build/artifacts/core
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: basic6502-core
+          path: build/artifacts/core

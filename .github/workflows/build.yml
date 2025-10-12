@@ -1,0 +1,37 @@
+name: build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore Basic6502.Core/Basic6502.Core.csproj
+          dotnet restore tests/Basic6502.Core.UnitTests/Basic6502.Core.UnitTests.csproj
+          dotnet restore tests/Basic6502.Core.IntegrationTests/Basic6502.Core.IntegrationTests.csproj
+          dotnet restore tests/Basic6502.EndToEndTests/Basic6502.EndToEndTests.csproj
+
+      - name: Build
+        run: dotnet build Basic6502.Core/Basic6502.Core.csproj --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test tests/Basic6502.Core.UnitTests/Basic6502.Core.UnitTests.csproj --configuration Release --no-build
+
+      - name: Run integration tests
+        run: dotnet test tests/Basic6502.Core.IntegrationTests/Basic6502.Core.IntegrationTests.csproj --configuration Release --no-build
+
+      - name: Run end-to-end tests
+        run: dotnet test tests/Basic6502.EndToEndTests/Basic6502.EndToEndTests.csproj --configuration Release --no-build
